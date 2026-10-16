@@ -21,6 +21,10 @@ def post_reel(video: Path, caption: str) -> str:
     client.delay_range = [1, 3]
     if config.SESSION_FILE.exists():
         client.load_settings(config.SESSION_FILE)
+        # Render keeps this session across a running instance.  Its saved app
+        # profile may be retired by Instagram; rebuild only the app profile
+        # while retaining the saved UUID/device identity for this account.
+        client.set_device({}, hydrate_app_profile=True)
     client.login(config.IG_USERNAME, config.IG_PASSWORD)
     client.dump_settings(config.SESSION_FILE)
     media = client.clip_upload(str(video), caption=caption)

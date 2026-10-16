@@ -26,7 +26,7 @@ async def poster_loop(app: web.Application) -> None:
         except Exception as exc:
             logger.exception("@motivbom cycle failed")
             pipeline.notify(f"❌ @motivbom agent xatosi: {type(exc).__name__}: {exc}")
-        await asyncio.sleep(config.POST_INTERVAL_HOURS * 3600)
+        await asyncio.sleep(config.POST_INTERVAL_MINUTES * 60)
 
 
 async def on_startup(app: web.Application) -> None:

@@ -29,12 +29,11 @@ AUTO_POST = os.getenv("AUTO_POST", "1").lower() not in {"0", "false", "no"}
 # Minutes allow short cadences without fractional-hour environment variables.
 # Keep the old hour variable as a fallback for existing deployments.
 POST_INTERVAL_MINUTES = max(
-        1,
-        int(os.getenv("POST_INTERVAL_MINUTES", str(int(os.getenv("POST_INTERVAL_HOURS", "6")) * 60))),
+    1,
+    int(os.getenv("POST_INTERVAL_MINUTES", str(int(os.getenv("POST_INTERVAL_HOURS", "6")) * 60))),
 )
 
 
 def ensure_dirs() -> None:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        VIDEO_DIR.mkdir(parents=True, exist_ok=True)
-    
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    VIDEO_DIR.mkdir(parents=True, exist_ok=True)

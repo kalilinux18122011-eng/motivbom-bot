@@ -18,5 +18,5 @@ services:
         sync: false
       - key: AUTO_POST
         value: "1"
-      - key: POST_INTERVAL_HOURS
-        value: "6"
+      - key: POST_INTERVAL_MINUTES
+        value: "30"

@@ -3,7 +3,12 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import os
+import time
+from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 import httpx
 
@@ -14,10 +19,49 @@ class GrokError(RuntimeError):
     pass
 
 
+_oauth_token = config.GROK_ACCESS_TOKEN
+_oauth_expires_at = config.GROK_EXPIRES_AT
+
+
+def _expiry(raw: str) -> float:
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return 0.0
+
+
+def _refresh_oauth() -> str:
+    global _oauth_token, _oauth_expires_at
+    if not config.GROK_REFRESH_TOKEN or not config.GROK_CLIENT_ID:
+        return _oauth_token
+    body = urlencode({"grant_type": "refresh_token", "refresh_token": config.GROK_REFRESH_TOKEN, "client_id": config.GROK_CLIENT_ID}).encode()
+    request = Request("https://auth.x.ai/oauth2/token", data=body, headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST")
+    with urlopen(request, timeout=30) as response:
+        payload = json.loads(response.read().decode())
+    _oauth_token = str(payload.get("access_token") or "")
+    expires_in = int(payload.get("expires_in") or 7200)
+    _oauth_expires_at = datetime.fromtimestamp(time.time() + expires_in, timezone.utc).isoformat()
+    return _oauth_token
+
+
+def _bearer_token() -> str:
+    # xAI developer keys conventionally start with xai-. An accidental Grok web key
+    # must not prevent the already-authorized subscription session from being used.
+    if config.XAI_API_KEY.startswith("xai-"):
+        return config.XAI_API_KEY
+    if _oauth_token and _expiry(_oauth_expires_at) - time.time() > 90:
+        return _oauth_token
+    try:
+        return _refresh_oauth()
+    except Exception as exc:
+        raise GrokError(f"Grok OAuth token yangilanmadi: {exc}") from exc
+
+
 def _headers() -> dict[str, str]:
-    if not config.XAI_API_KEY:
-        raise GrokError("XAI_API_KEY не задан в Render environment")
-    return {"Authorization": f"Bearer {config.XAI_API_KEY}", "Content-Type": "application/json"}
+    token = _bearer_token()
+    if not token:
+        raise GrokError("Grok OAuth yoki XAI_API_KEY sozlanmagan")
+    return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
 
 def image_data(path: Path) -> str:

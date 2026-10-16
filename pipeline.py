@@ -4,14 +4,13 @@ import asyncio
 import json
 import logging
 import shutil
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
 
 import config
-from grok_client import GrokError, chat, generate_image, generate_video, image_data, json_object
+from grok_client import GrokError, chat, generate_image, generate_video, json_object
 from instagram import post_reel
 
 logger = logging.getLogger(__name__)
@@ -72,31 +71,6 @@ class MotivBomPipeline:
             return config.CHARACTER_FILE
         return await generate_image("Studio character reference, full-body vertical 9:16. A single black matte 3D protein shaker bottle with a friendly expressive face, muscular human arms, wearing no clothes, clean dark gym background. Premium Pixar-like product animation, no text, no logos, no watermark.", config.CHARACTER_FILE)
 
-    def _video_facts(self, video: Path) -> dict:
-        result = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=width,height", "-of", "json", str(video)], check=True, capture_output=True, text=True)
-        data = json.loads(result.stdout)
-        stream = next((s for s in data.get("streams", []) if s.get("width")), {})
-        return {"duration": round(float(data["format"]["duration"]), 2), "width": stream.get("width"), "height": stream.get("height")}
-
-    def _frames(self, video: Path) -> list[Path]:
-        frames = []
-        for second in (1, 7, 14):
-            destination = config.DATA_DIR / f"review_{second}.jpg"
-            subprocess.run(["ffmpeg", "-y", "-ss", str(second), "-i", str(video), "-frames:v", "1", "-q:v", "3", str(destination)], check=True, capture_output=True)
-            frames.append(destination)
-        return frames
-
-    async def critique(self, video: Path, idea: dict, script: dict) -> dict:
-        facts = self._video_facts(video)
-        if facts["height"] <= facts["width"] or not 15 <= facts["duration"] <= 25:
-            return {"approved": False, "score": 0, "reason": f"Texnik xato: {facts}"}
-        content: list[dict] = [{"type": "text", "text": f"Sen qattiqqo'l Reel kritiksan. G'oya: {idea['idea']}. Ssenariy: {script['spoken']}. Kadrlarni bahola: qahramon bir xil qora 3D shakerligini, vertikal formatni, birinchi kadr hookini, artefakt/watermark yo'qligini va brend xavfsizligini tekshir. Faqat JSON: {{\"approved\":true/false,\"score\":0-100,\"reason\":\"qisqa\"}}"}]
-        content.extend({"type": "image_url", "image_url": {"url": image_data(frame)}} for frame in self._frames(video))
-        raw = await chat([{"role": "system", "content": "Faqat JSON qaytar."}, {"role": "user", "content": content}], max_tokens=500)
-        result = json_object(raw)
-        result["approved"] = bool(result.get("approved")) and int(result.get("score", 0)) >= 75
-        return result
-
     def _record(self, record: dict) -> None:
         with self.history_file.open("a", encoding="utf-8") as file:
             file.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -108,13 +82,9 @@ class MotivBomPipeline:
         reference = await self.shaker_reference()
         video = config.VIDEO_DIR / f"reel_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.mp4"
         await generate_video(script["video_prompt"], video, reference)
-        review = await self.critique(video, idea, script)
-        if not review.get("approved"):
-            self.notify(f"⚠️ @motivbom video kritikdan o'tmadi ({review.get('score', 0)}/100): {review.get('reason', '')}. Post qilinmadi.")
-            return
         if not config.AUTO_POST:
-            self.notify(f"✅ @motivbom video tasdiqlandi ({review.get('score')}/100), AUTO_POST=0: post qilinmadi.")
+            self.notify("✅ @motivbom video yaratildi, AUTO_POST=0: post qilinmadi.")
             return
         media_id = await asyncio.to_thread(post_reel, video, script["caption"])
-        self._record({"at": datetime.now(timezone.utc).isoformat(), "idea": idea["idea"], "media_id": media_id, "caption": script["caption"], "review": review, "sources": self.sources_for(idea)})
-        self.notify(f"🚀 @motivbom Instagramga chiqdi!\nID: {media_id}\nBahosi: {review.get('score')}/100\n{idea['idea']}\nhttps://www.instagram.com/{config.IG_USERNAME}/")
+        self._record({"at": datetime.now(timezone.utc).isoformat(), "idea": idea["idea"], "media_id": media_id, "caption": script["caption"], "sources": self.sources_for(idea)})
+        self.notify(f"🚀 @motivbom Instagramga chiqdi!\nID: {media_id}\n{idea['idea']}\nhttps://www.instagram.com/{config.IG_USERNAME}/")

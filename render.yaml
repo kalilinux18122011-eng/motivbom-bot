@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: motivbom-bot
+    env: docker
+    region: oregon
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: IG_USERNAME
+        sync: false
+      - key: IG_PASSWORD
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: TG_BOT_TOKEN
+        sync: false
+      - key: TG_CHAT_ID
+        sync: false
+      - key: AUTO_POST
+        value: "1"
+      - key: POST_INTERVAL_HOURS
+        value: "6"

@@ -1,0 +1,10 @@
+.env
+data/
+__pycache__/
+*.py[cod]
+*.pid
+*.log
+sample_reel.mp4
+inspect_acc.py
+public_inspect.py
+worker_2337.py

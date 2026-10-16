@@ -1,0 +1,14 @@
+[Unit]
+Description=MotivBom Instagram 24/7 Autoposting Worker
+After=network.target
+
+[Service]
+Type=simple
+User=kali
+WorkingDirectory=/home/kali/motivbom_bot
+ExecStart=/home/kali/motivbom_bot/venv/bin/python /home/kali/motivbom_bot/worker.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -26,11 +26,12 @@ IG_PASSWORD = os.getenv("IG_PASSWORD", "").strip()
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN", "").strip()
 TG_CHAT_ID = os.getenv("TG_CHAT_ID", "").strip()
 AUTO_POST = os.getenv("AUTO_POST", "1").lower() not in {"0", "false", "no"}
-# Minutes allow short cadences without fractional-hour environment variables.
-# Keep the old hour variable as a fallback for existing deployments.
+# The production cadence is expressed only in minutes. Do not fall back to the
+# retired POST_INTERVAL_HOURS variable: existing Render services preserve old
+# environment variables after render.yaml changes.
 POST_INTERVAL_MINUTES = max(
     1,
-    int(os.getenv("POST_INTERVAL_MINUTES", str(int(os.getenv("POST_INTERVAL_HOURS", "6")) * 60))),
+    int(os.getenv("POST_INTERVAL_MINUTES", "30")),
 )
 
 

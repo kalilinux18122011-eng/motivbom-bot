@@ -81,6 +81,17 @@ async def chat(messages: list[dict], *, max_tokens: int = 1800) -> str:
         raise GrokError("Grok вернул ответ без текста") from exc
 
 
+async def analyze_frames(instruction: str, frames: list[Path]) -> str:
+    """Ask Grok to inspect actual extracted video frames, not invented footage."""
+    content: list[dict] = [{"type": "text", "text": instruction}]
+    for frame in frames:
+        content.append({"type": "image_url", "image_url": {"url": image_data(frame)}})
+    return await chat([
+        {"role": "system", "content": "Ты честный редактор Instagram Reels. Описывай только то, что видно в кадрах и в переданных метриках. Если данных не хватает — прямо напиши это."},
+        {"role": "user", "content": content},
+    ], max_tokens=1800)
+
+
 def json_object(text: str) -> dict:
     start = text.find("{")
     if start < 0:

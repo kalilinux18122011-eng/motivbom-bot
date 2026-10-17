@@ -25,6 +25,8 @@ IG_USERNAME = os.getenv("IG_USERNAME", "motivbom").strip()
 IG_PASSWORD = os.getenv("IG_PASSWORD", "").strip()
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN", "").strip()
 TG_CHAT_ID = os.getenv("TG_CHAT_ID", "").strip()
+MINI_APP_URL = os.getenv("MINI_APP_URL", "https://motivbom-bot.onrender.com").rstrip("/")
+MAX_ANALYSIS_VIDEO_MB = max(1, int(os.getenv("MAX_ANALYSIS_VIDEO_MB", "40")))
 AUTO_POST = os.getenv("AUTO_POST", "1").lower() not in {"0", "false", "no"}
 # The production cadence is expressed only in minutes. Do not fall back to the
 # retired POST_INTERVAL_HOURS variable: existing Render services preserve old

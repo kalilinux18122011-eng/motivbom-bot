@@ -16,8 +16,6 @@ services:
         sync: false
       - key: TG_CHAT_ID
         sync: false
-      - key: MINI_APP_URL
-        value: "https://motivbom-bot.onrender.com/miniapp"
       - key: AUTO_POST
         value: "1"
       - key: POST_INTERVAL_MINUTES

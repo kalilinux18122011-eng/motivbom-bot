@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import logging
 import os
+import time
 from pathlib import Path
 from urllib.parse import parse_qsl
 from datetime import datetime, timezone
@@ -38,6 +39,13 @@ def valid_telegram_init_data(raw: str) -> bool:
     values = dict(parse_qsl(raw, keep_blank_values=True))
     received_hash = values.pop("hash", "")
     if not received_hash:
+        return False
+    try:
+        auth_date = int(values["auth_date"])
+    except (KeyError, ValueError):
+        return False
+    # A valid signature should not be reusable indefinitely if it leaks.
+    if auth_date < time.time() - 86400 or auth_date > time.time() + 300:
         return False
     check_string = "\n".join(f"{key}={value}" for key, value in sorted(values.items()))
     # Per Telegram's validation algorithm the bot token is the HMAC key.

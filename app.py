@@ -40,8 +40,7 @@ def valid_telegram_init_data(raw: str) -> bool:
     if not received_hash:
         return False
     check_string = "\n".join(f"{key}={value}" for key, value in sorted(values.items()))
-    # Per Telegram's validation algorithm the bot token is the HMAC key.
-    secret = hmac.new(config.TG_BOT_TOKEN.encode(), b"WebAppData", hashlib.sha256).digest()
+    secret = hmac.new(b"WebAppData", config.TG_BOT_TOKEN.encode(), hashlib.sha256).digest()
     expected = hmac.new(secret, check_string.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, received_hash)
 

@@ -45,9 +45,9 @@ def _refresh_oauth() -> str:
 
 
 def _bearer_token() -> str:
-    # xAI developer keys conventionally start with xai-. An accidental Grok web key
-    # must not prevent the already-authorized subscription session from being used.
-    if config.XAI_API_KEY.startswith("xai-"):
+    # xAI has issued both legacy ``xai-`` keys and current ``grok_`` keys.
+    # Do not confuse either developer-key format with a browser OAuth token.
+    if config.XAI_API_KEY.startswith(("xai-", "grok_")):
         return config.XAI_API_KEY
     if _oauth_token and _expiry(_oauth_expires_at) - time.time() > 90:
         return _oauth_token
